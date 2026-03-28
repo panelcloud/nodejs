@@ -1,34 +1,16 @@
-
 const express = require('express');
 const path = require('path');
-const indexRouter = require('./routes/index');
-
 const app = express();
-const PORT = process.env.PORT || 3000;
 
-// Middleware: log request method and url
-app.use((req, res, next) => {
-  console.info(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-  next();
-});
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.urlencoded({ extended: true }));
 
-// Static files
-app.use(express.static(path.resolve(__dirname, 'public')));
+app.use('/', require('./routes/index'));
 
-// Main routes
-app.use('/', indexRouter);
-
-// 404 handler
 app.use((req, res) => {
-  res.status(404).sendFile(path.resolve(__dirname, 'views', '404.html'));
+  res.status(404).sendFile(path.join(__dirname, 'views', '404.html'));
 });
 
-// Error handler
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).send('Internal Server Error');
-});
-
-app.listen(PORT, () => {
-  console.log(`Server listening: http://localhost:${PORT}`);
-});
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`banksol running on port ${PORT}`));
