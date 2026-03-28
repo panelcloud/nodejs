@@ -7,14 +7,138 @@
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="h-screen bg-[#FAFAFA] flex items-center justify-center">
-  <div class="text-center">
+
+  <!-- Landing -->
+  <div id="landing" class="text-center">
     <h1 class="text-5xl font-extrabold tracking-tighter text-[#171717] mb-4">banksol</h1>
-    <p class="text-gray-500 text-lg">Conciliació bancària automàtica per a ContaSOL</p>
-    <div class="mt-8">
-      <a href="#" class="px-6 py-3 bg-[#171717] text-white rounded-lg font-medium hover:bg-black transition">
+    <p class="text-gray-500 text-lg mb-8">Conciliació bancària automàtica per a ContaSOL</p>
+    <div class="flex gap-4 justify-center">
+      <button onclick="mostrar('login')" class="px-6 py-3 bg-[#171717] text-white rounded-lg font-medium hover:bg-black transition">
         Accedir
-      </a>
+      </button>
+      <button onclick="mostrar('register')" class="px-6 py-3 border border-[#171717] text-[#171717] rounded-lg font-medium hover:bg-gray-100 transition">
+        Prova 15 dies gratis
+      </button>
     </div>
   </div>
+
+  <!-- Login -->
+  <div id="login" class="hidden w-full max-w-sm bg-white p-8 rounded-xl border border-gray-200 shadow-sm">
+    <h2 class="text-2xl font-bold mb-6 text-[#171717]">Accedir</h2>
+    <input id="login_email" type="email" placeholder="Correu electrònic" class="w-full border border-gray-300 rounded-lg px-4 py-2 mb-3 focus:outline-none focus:border-gray-500"/>
+    <input id="login_pass" type="password" placeholder="Contrasenya" class="w-full border border-gray-300 rounded-lg px-4 py-2 mb-4 focus:outline-none focus:border-gray-500"/>
+    <p id="login_error" class="text-red-500 text-sm mb-3 hidden"></p>
+    <button onclick="login()" class="w-full bg-[#171717] text-white py-2 rounded-lg font-medium hover:bg-black transition">
+      Entrar
+    </button>
+    <p class="text-center text-sm text-gray-500 mt-4">
+      No tens compte? <button onclick="mostrar('register')" class="underline">Registra't</button>
+    </p>
+  </div>
+
+  <!-- Registre -->
+  <div id="register" class="hidden w-full max-w-sm bg-white p-8 rounded-xl border border-gray-200 shadow-sm">
+    <h2 class="text-2xl font-bold mb-2 text-[#171717]">Prova gratuïta</h2>
+    <p class="text-gray-500 text-sm mb-6">15 dies gratis, sense targeta de crèdit</p>
+    <input id="reg_nom" type="text" placeholder="Nom i cognoms" class="w-full border border-gray-300 rounded-lg px-4 py-2 mb-3 focus:outline-none focus:border-gray-500"/>
+    <input id="reg_email" type="email" placeholder="Correu electrònic" class="w-full border border-gray-300 rounded-lg px-4 py-2 mb-3 focus:outline-none focus:border-gray-500"/>
+    <input id="reg_pass" type="password" placeholder="Contrasenya (mínim 6 caràcters)" class="w-full border border-gray-300 rounded-lg px-4 py-2 mb-4 focus:outline-none focus:border-gray-500"/>
+    <p id="reg_error" class="text-red-500 text-sm mb-3 hidden"></p>
+    <button onclick="register()" class="w-full bg-[#171717] text-white py-2 rounded-lg font-medium hover:bg-black transition">
+      Començar prova gratuïta
+    </button>
+    <p class="text-center text-sm text-gray-500 mt-4">
+      Ja tens compte? <button onclick="mostrar('login')" class="underline">Accedeix</button>
+    </p>
+  </div>
+
+  <!-- Dashboard (després de login) -->
+  <div id="dashboard" class="hidden w-full max-w-2xl text-center">
+    <h1 class="text-4xl font-extrabold tracking-tighter text-[#171717] mb-2">banksol</h1>
+    <p id="welcome_msg" class="text-gray-500 mb-2"></p>
+    <p id="trial_msg" class="text-sm text-amber-600 mb-8"></p>
+    <button onclick="logout()" class="text-sm text-gray-400 underline">Tancar sessió</button>
+  </div>
+
+  <script>
+    function mostrar(seccio) {
+      ['landing','login','register','dashboard'].forEach(s => {
+        document.getElementById(s).classList.add('hidden');
+      });
+      document.getElementById(seccio).classList.remove('hidden');
+    }
+
+    async function login() {
+      const email = document.getElementById('login_email').value;
+      const password = document.getElementById('login_pass').value;
+      const err = document.getElementById('login_error');
+
+      const res = await fetch('/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+
+      if (!data.ok) {
+        err.textContent = 'Correu o contrasenya incorrectes';
+        err.classList.remove('hidden');
+        return;
+      }
+      carregarDashboard();
+    }
+
+    async function register() {
+      const nom = document.getElementById('reg_nom').value;
+      const email = document.getElementById('reg_email').value;
+      const password = document.getElementById('reg_pass').value;
+      const err = document.getElementById('reg_error');
+
+      const res = await fetch('/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nom, email, password })
+      });
+      const data = await res.json();
+
+      if (!data.ok) {
+        err.textContent = data.error || 'Error en el registre';
+        err.classList.remove('hidden');
+        return;
+      }
+      mostrar('login');
+      alert('Compte creat! Comprova el teu correu per confirmar el compte.');
+    }
+
+    async function carregarDashboard() {
+      const res = await fetch('/auth/me');
+      const data = await res.json();
+
+      if (!data.ok) return mostrar('landing');
+
+      const u = data.user;
+      document.getElementById('welcome_msg').textContent = `Benvingut, ${u.nom || u.email}`;
+
+      const trial = new Date(u.trial_ends_at);
+      const avui = new Date();
+      const dies = Math.ceil((trial - avui) / (1000 * 60 * 60 * 24));
+
+      if (u.pla === 'trial') {
+        document.getElementById('trial_msg').textContent = 
+          dies > 0 ? `Període de prova: ${dies} dies restants` : 'El teu període de prova ha finalitzat';
+      }
+
+      mostrar('dashboard');
+    }
+
+    async function logout() {
+      await fetch('/auth/logout', { method: 'POST' });
+      mostrar('landing');
+    }
+
+    // Comprovar sessió en carregar
+    carregarDashboard();
+  </script>
+
 </body>
 </html>
