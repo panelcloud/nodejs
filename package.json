@@ -1,14 +1,15 @@
 {
-  "name": "nodejs-app",
+  "name": "banksol",
   "version": "1.0.0",
-  "description": "A minimal Node.js web application.",
+  "description": "Conciliació bancària automàtica per a ContaSOL",
   "main": "app.js",
-  "author": "codestorm",
-  "license": "Apache-2.0",
-  "dependencies": {
-    "express": "^5.1.0"
-  },
   "scripts": {
     "start": "node app.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "@supabase/supabase-js": "^2.39.0",
+    "jsonwebtoken": "^9.0.2",
+    "cookie-parser": "^1.4.6"
   }
 }
